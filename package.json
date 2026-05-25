@@ -2,6 +2,9 @@
   "name": "thinkin-ticket-management-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
     "lint:backend": "npm run lint --prefix backend",
