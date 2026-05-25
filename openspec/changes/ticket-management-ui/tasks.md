@@ -83,3 +83,15 @@
 - [x] 8.4 Update root and/or frontend README instructions for starting the frontend, configuring `VITE_API_BASE_URL`, running tests, and known production follow-ups.
 - [x] 8.5 Confirm no backend contract changes were introduced unless separately justified by a discovered backend bug.
 - [x] 8.6 Run `openspec status --change ticket-management-ui` and ensure the change is ready for implementation review.
+
+## 9. Responsive usability - red, green, refactor
+
+- [x] 9.1 RED: Add user-observable responsive behavior tests for desktop, tablet, and mobile-width rendering of the ticket management screen, avoiding assertions on exact pixel values or Vuetify internals.
+- [x] 9.2 RED: Add a test or focused component coverage proving the ticket list remains readable/actionable on narrow screens through a pragmatic adaptation such as overflow, wrapping, condensed content, or stacked details.
+- [x] 9.3 RED: Add tests proving status and priority filters stack, wrap, or otherwise remain operable on smaller widths while preserving query and pagination-reset behavior.
+- [x] 9.4 RED: Add tests proving create and edit forms expose required fields, validation/API feedback, submit controls, and cancel/close controls on mobile-width layouts.
+- [x] 9.5 RED: Add tests proving loading, empty, and error states remain readable and recovery actions remain reachable across representative viewport classes.
+- [x] 9.6 GREEN: Implement the minimum responsive Vuetify layout changes needed to pass the responsive tests without redesigning the UI.
+- [x] 9.7 REFACTOR: Simplify responsive layout helpers/classes and remove brittle test setup while keeping existing and responsive tests green.
+- [x] 9.8 VERIFY: Run the frontend test suite and perform pragmatic manual checks at common desktop, tablet, and mobile widths.
+- [x] 9.9 VERIFY: Run `openspec validate ticket-management-ui --strict` and confirm the updated change remains valid.

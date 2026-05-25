@@ -153,3 +153,63 @@ The frontend SHALL parse backend error responses when possible and show concise 
 #### Scenario: Unexpected backend error
 - **WHEN** the backend returns an unexpected server error response
 - **THEN** the frontend displays a generic failure message suitable for retry
+
+### Requirement: Responsive ticket management layout
+The frontend SHALL keep the ticket management screen usable at common desktop, tablet, and mobile viewport widths using pragmatic Vuetify layout defaults rather than pixel-perfect styling rules.
+
+#### Scenario: Layout remains usable across common viewport classes
+- **WHEN** a user opens the ticket management UI on a desktop, tablet, or mobile-width viewport
+- **THEN** the primary ticket list, filters, pagination, and create action remain reachable without overlapping or clipped controls
+- **AND** the layout may adapt using Vuetify grids, breakpoints, wrapping, stacking, or scroll containers
+
+#### Scenario: Responsive behavior avoids visual redesign
+- **WHEN** the viewport changes between desktop, tablet, and mobile-width layouts
+- **THEN** the UI preserves the existing ticket management workflow and information hierarchy
+- **AND** the UI does not require a separate pixel-perfect design or a full visual redesign
+
+### Requirement: Responsive ticket list presentation
+The frontend SHALL present the ticket list without visually breaking on narrow screens.
+
+#### Scenario: Ticket list remains readable on narrow screens
+- **WHEN** a user views the ticket list on a mobile-width viewport
+- **THEN** ticket content remains readable and actionable
+- **AND** columns or actions do not overlap in a way that prevents identifying or editing a ticket
+
+#### Scenario: Narrow ticket list uses pragmatic overflow or adaptation
+- **WHEN** the available width is too narrow for all ticket columns to fit comfortably
+- **THEN** the frontend uses an appropriate Vuetify-aligned adaptation such as horizontal scrolling, wrapping, condensed presentation, or stacked details
+- **AND** the adaptation keeps required ticket information accessible to the user
+
+### Requirement: Responsive filter controls
+The frontend SHALL adapt status and priority filters on smaller screens so filtering remains usable.
+
+#### Scenario: Filters adapt on tablet and mobile widths
+- **WHEN** a user views the filter controls on a tablet or mobile-width viewport
+- **THEN** the status and priority filters stack, wrap, or otherwise adapt so each control remains readable and operable
+- **AND** clearing or changing filters remains possible without horizontal clipping of the controls
+
+#### Scenario: Responsive filter changes preserve query behavior
+- **WHEN** a user changes or clears a filter after the controls have adapted for a smaller viewport
+- **THEN** the frontend sends the same query changes required by the desktop filter behavior
+- **AND** pagination reset behavior remains unchanged
+
+### Requirement: Responsive ticket create and edit forms
+The frontend SHALL keep ticket creation and editing forms usable on mobile-width screens.
+
+#### Scenario: Create form is usable on mobile
+- **WHEN** a user opens the create ticket form on a mobile-width viewport
+- **THEN** required fields, validation messages, submit controls, and cancel or close controls remain reachable and readable
+- **AND** the form can be completed without controls overlapping or being hidden off-screen without a normal scrolling path
+
+#### Scenario: Edit form is usable on mobile
+- **WHEN** a user opens the edit ticket form on a mobile-width viewport
+- **THEN** populated fields, validation or API error messages, submit controls, and cancel or close controls remain reachable and readable
+- **AND** the form can be submitted or dismissed without relying on desktop-only layout assumptions
+
+### Requirement: Responsive list state readability
+The frontend SHALL keep loading, empty, and error states readable at desktop, tablet, and mobile widths.
+
+#### Scenario: List states remain readable across viewport classes
+- **WHEN** the ticket list is loading, empty, or in an error state on a desktop, tablet, or mobile-width viewport
+- **THEN** the state message or indicator remains visible and readable
+- **AND** any recovery action such as retry remains reachable when present
