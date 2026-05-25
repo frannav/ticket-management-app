@@ -117,6 +117,28 @@ npm run build
 
 `npm run build` in the frontend currently emits Vite's standard large-chunk warning because Vuetify and Material Design Icons are bundled for this small technical-test UI. The build succeeds.
 
+## Quality checks and CI
+
+Linting uses Oxlint separately from TypeScript/Vue type checking:
+
+```bash
+# Run both app lint commands from the repository root
+npm run lint
+
+# Or run each app independently
+cd backend
+npm run lint
+npm test
+npm run build
+
+cd ../frontend
+npm run lint
+npm test
+npm run build
+```
+
+Backend tests require MongoDB, for example `docker compose up -d mongodb` with `MONGODB_TEST_URI=mongodb://127.0.0.1:27017/thinkin_tickets_test`. GitHub Actions CI runs equivalent backend and frontend verification on `push` and `pull_request`: `npm ci`, Oxlint, tests, and build checks.
+
 ## Docker Compose
 
 MongoDB is the default Compose dependency:
@@ -164,11 +186,11 @@ The frontend is intentionally not included as a Compose service. For review and 
 - Logging is minimal request/error logging rather than structured observability.
 - Search is simple text matching suitable for the timebox, not a tuned search system.
 - Frontend bundle splitting has not been optimized; the production build succeeds with a chunk-size warning.
-- No CI pipeline is included yet; commands are documented and verified locally.
+- CI is intentionally limited to install/lint/test/build verification; it does not deploy or publish artifacts.
 
 ## Production readiness
 
-For production I would add authentication/authorization with tenant scoping, reviewed CORS or same-origin deployment, structured logs/metrics/tracing, CI checks for tests/builds, rate limits and request-size limits, backups and migration strategy, stronger indexes, deployment health/readiness probes, and frontend error monitoring. I would also separate runtime secrets from example env files and define operational runbooks for incident response and data recovery.
+For production I would add authentication/authorization with tenant scoping, reviewed CORS or same-origin deployment, structured logs/metrics/tracing, expanded CI/security gates, rate limits and request-size limits, backups and migration strategy, stronger indexes, deployment health/readiness probes, and frontend error monitoring. I would also separate runtime secrets from example env files and define operational runbooks for incident response and data recovery.
 
 ## AI usage declaration
 
