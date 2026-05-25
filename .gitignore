@@ -33,3 +33,5 @@ Thumbs.db
 # Docker / runtime
 *.pid
 *.seed
+
+.playwright-mcp
