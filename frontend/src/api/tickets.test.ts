@@ -27,24 +27,41 @@ describe("ticket API client", () => {
     );
     vi.stubGlobal("fetch", fetchSpy);
 
-    await listTickets({ page: 2, page_size: 10, status: "open", priority: "urgent" });
+    await listTickets({
+      page: 2,
+      page_size: 10,
+      hotel_id: "hotel-1",
+      channel: "chat",
+      status: "open",
+      priority: "urgent",
+      assigned_to: "ana",
+      q: "late checkout"
+    });
 
     const requestedUrl = new URL(String(fetchSpy.mock.calls[0][0]));
     expect(requestedUrl.origin).toBe("https://tickets.example.test");
     expect(requestedUrl.pathname).toBe("/api/v1/tickets");
     expect(requestedUrl.searchParams.get("page")).toBe("2");
     expect(requestedUrl.searchParams.get("page_size")).toBe("10");
+    expect(requestedUrl.searchParams.get("hotel_id")).toBe("hotel-1");
+    expect(requestedUrl.searchParams.get("channel")).toBe("chat");
     expect(requestedUrl.searchParams.get("status")).toBe("open");
     expect(requestedUrl.searchParams.get("priority")).toBe("urgent");
+    expect(requestedUrl.searchParams.get("assigned_to")).toBe("ana");
+    expect(requestedUrl.searchParams.get("q")).toBe("late checkout");
   });
 
   it("omits empty optional filters when serializing list queries", () => {
-    const url = buildTicketListUrl({ page: 1, page_size: 20, status: "", priority: "" });
+    const url = buildTicketListUrl({ page: 1, page_size: 20, hotel_id: " ", channel: "", status: "", priority: "", assigned_to: "", q: " " });
 
     expect(url.searchParams.get("page")).toBe("1");
     expect(url.searchParams.get("page_size")).toBe("20");
     expect(url.searchParams.has("status")).toBe(false);
     expect(url.searchParams.has("priority")).toBe(false);
+    expect(url.searchParams.has("hotel_id")).toBe(false);
+    expect(url.searchParams.has("channel")).toBe(false);
+    expect(url.searchParams.has("assigned_to")).toBe(false);
+    expect(url.searchParams.has("q")).toBe(false);
   });
 
   it("normalizes backend error responses into user-facing API errors", async () => {

@@ -21,7 +21,7 @@ describe("App", () => {
     );
     const wrapper = mountWithVuetify(App);
 
-    expect(wrapper.text()).toContain("Ticket Management");
+    expect(wrapper.text()).toContain("Live schematic board");
     expect(wrapper.text()).toContain("Ticket management");
   });
 });

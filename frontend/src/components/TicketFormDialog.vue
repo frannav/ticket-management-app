@@ -1,73 +1,83 @@
 <template>
-  <section
-    v-if="modelValue"
-    class="ticket-dialog ticket-dialog--mobile-friendly"
-    role="dialog"
-    :aria-label="mode === 'create' ? 'Create ticket' : 'Edit ticket'"
-  >
-    <v-card class="mt-4">
-      <v-card-title>{{ mode === "create" ? "Create ticket" : "Edit ticket" }}</v-card-title>
-      <v-card-text>
-        <v-alert v-if="submitError" class="mb-4" type="error" role="alert">{{ submitError }}</v-alert>
-
-        <form aria-label="Ticket form" class="ticket-form" @submit.prevent="submit">
-          <label>
-            Hotel ID
-            <input v-model.trim="form.hotel_id" aria-label="Hotel ID" />
-            <span v-if="errors.hotel_id" role="alert">{{ errors.hotel_id }}</span>
-          </label>
-
-          <label>
-            Subject
-            <input v-model.trim="form.subject" aria-label="Subject" />
-            <span v-if="errors.subject" role="alert">{{ errors.subject }}</span>
-          </label>
-
-          <label>
-            Description
-            <textarea v-model.trim="form.description" aria-label="Description" />
-            <span v-if="errors.description" role="alert">{{ errors.description }}</span>
-          </label>
-
-          <label>
-            Channel
-            <select v-model="form.channel" aria-label="Channel">
-              <option value="">Select channel</option>
-              <option v-for="channel in ticketChannels" :key="channel" :value="channel">{{ channel }}</option>
-            </select>
-            <span v-if="errors.channel" role="alert">{{ errors.channel }}</span>
-          </label>
-
-          <label>
-            Priority
-            <select v-model="form.priority" aria-label="Priority">
-              <option value="">Select priority</option>
-              <option v-for="priority in ticketPriorities" :key="priority" :value="priority">{{ priority }}</option>
-            </select>
-            <span v-if="errors.priority" role="alert">{{ errors.priority }}</span>
-          </label>
-
-          <label>
-            Status
-            <select v-model="form.status" aria-label="Status">
-              <option value="">Use backend default</option>
-              <option v-for="status in ticketStatuses" :key="status" :value="status">{{ status }}</option>
-            </select>
-          </label>
-
-          <label>
-            Assigned to
-            <input v-model.trim="form.assigned_to" aria-label="Assigned to" />
-          </label>
-
-          <div class="ticket-form-actions d-flex ga-2 mt-4">
-            <v-btn color="primary" type="submit" :loading="isSubmitting">{{ mode === "create" ? "Create" : "Save changes" }}</v-btn>
-            <v-btn variant="text" type="button" @click="$emit('update:modelValue', false)">Cancel</v-btn>
+  <div v-if="modelValue" class="ticket-dialog-backdrop" @click.self="$emit('update:modelValue', false)" @keydown.esc="$emit('update:modelValue', false)">
+    <section
+      class="ticket-dialog ticket-dialog--mobile-friendly"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="mode === 'create' ? 'Create ticket' : 'Edit ticket'"
+    >
+      <v-card class="blueprint-form-card">
+        <v-card-title>
+          <div>
+            <span class="form-kicker">Ticket drafting module</span>
+            {{ mode === "create" ? "Create ticket" : "Edit ticket" }}
           </div>
-        </form>
-      </v-card-text>
-    </v-card>
-  </section>
+          <v-btn class="ticket-dialog-close" variant="outlined" size="small" type="button" @click="$emit('update:modelValue', false)">
+            Close
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <v-alert v-if="submitError" class="mb-4" type="error" role="alert">{{ submitError }}</v-alert>
+
+          <form aria-label="Ticket form" class="ticket-form" @submit.prevent="submit">
+            <label>
+              Hotel ID
+              <input v-model.trim="form.hotel_id" aria-label="Hotel ID" />
+              <span v-if="errors.hotel_id" role="alert">{{ errors.hotel_id }}</span>
+            </label>
+
+            <label>
+              Subject
+              <input v-model.trim="form.subject" aria-label="Subject" />
+              <span v-if="errors.subject" role="alert">{{ errors.subject }}</span>
+            </label>
+
+            <label class="ticket-form__wide">
+              Description
+              <textarea v-model.trim="form.description" aria-label="Description" />
+              <span v-if="errors.description" role="alert">{{ errors.description }}</span>
+            </label>
+
+            <label>
+              Channel
+              <select v-model="form.channel" aria-label="Channel">
+                <option value="">Select channel</option>
+                <option v-for="channel in ticketChannels" :key="channel" :value="channel">{{ channel }}</option>
+              </select>
+              <span v-if="errors.channel" role="alert">{{ errors.channel }}</span>
+            </label>
+
+            <label>
+              Priority
+              <select v-model="form.priority" aria-label="Priority">
+                <option value="">Select priority</option>
+                <option v-for="priority in ticketPriorities" :key="priority" :value="priority">{{ priority }}</option>
+              </select>
+              <span v-if="errors.priority" role="alert">{{ errors.priority }}</span>
+            </label>
+
+            <label>
+              Status
+              <select v-model="form.status" aria-label="Status">
+                <option value="">Use backend default</option>
+                <option v-for="status in ticketStatuses" :key="status" :value="status">{{ status }}</option>
+              </select>
+            </label>
+
+            <label>
+              Assigned to
+              <input v-model.trim="form.assigned_to" aria-label="Assigned to" />
+            </label>
+
+            <div class="ticket-form-actions d-flex ga-2 mt-4">
+              <v-btn color="primary" type="submit" :loading="isSubmitting">{{ mode === "create" ? "Create" : "Save changes" }}</v-btn>
+              <v-btn variant="text" type="button" @click="$emit('update:modelValue', false)">Cancel</v-btn>
+            </div>
+          </form>
+        </v-card-text>
+      </v-card>
+    </section>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -229,28 +239,104 @@ const submit = async () => {
 </script>
 
 <style scoped>
+.ticket-dialog-backdrop {
+  align-items: center;
+  background:
+    linear-gradient(rgba(3, 16, 36, 0.82), rgba(3, 16, 36, 0.88)),
+    radial-gradient(circle at 50% 20%, rgba(125, 211, 252, 0.16), transparent 26rem);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  position: fixed;
+  z-index: 1000;
+}
+
+.ticket-dialog-backdrop::before {
+  background-image:
+    linear-gradient(rgba(198, 235, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(198, 235, 255, 0.08) 1px, transparent 1px);
+  background-size: 1rem 1rem;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.blueprint-form-card {
+  background:
+    linear-gradient(135deg, rgba(125, 211, 252, 0.1), transparent 38%),
+    rgba(4, 19, 41, 0.94);
+  border: 1px solid rgba(198, 235, 255, 0.58);
+  border-radius: 0;
+  box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.32);
+}
+
+.blueprint-form-card :deep(.v-card-title) {
+  align-items: start;
+  border-bottom: 1px solid rgba(198, 235, 255, 0.24);
+  color: #ffffff;
+  display: flex;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  gap: 0.25rem;
+  justify-content: space-between;
+  letter-spacing: -0.035em;
+  white-space: normal;
+}
+
+.ticket-dialog-close {
+  flex: 0 0 auto;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form-kicker {
+  color: #b7e4ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .ticket-form {
   display: grid;
   gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .ticket-dialog {
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.44);
   max-height: min(42rem, calc(100vh - 2rem));
   overflow-y: auto;
+  position: relative;
+  width: min(54rem, 100%);
+  z-index: 1;
 }
 
 .ticket-form label {
   display: grid;
-  gap: 0.25rem;
-  font-weight: 600;
+  gap: 0.4rem;
+  color: #b7e4ff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ticket-form__wide {
+  grid-column: 1 / -1;
 }
 
 .ticket-form input,
 .ticket-form select,
 .ticket-form textarea {
-  border: 1px solid rgb(var(--v-theme-outline));
-  border-radius: 4px;
-  padding: 0.5rem;
+  background: rgba(3, 16, 36, 0.72);
+  border: 1px solid rgba(198, 235, 255, 0.54);
+  border-radius: 0;
+  color: #f8fcff;
+  min-height: 2.8rem;
+  padding: 0.55rem 0.7rem;
 }
 
 .ticket-form textarea {
@@ -265,18 +351,36 @@ const submit = async () => {
 
 .ticket-form-actions {
   flex-wrap: wrap;
+  grid-column: 1 / -1;
 }
 
 [role="alert"] {
-  color: rgb(var(--v-theme-error));
+  color: #fecaca;
   font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 @media (max-width: 600px) {
+  .ticket-dialog-backdrop {
+    align-items: stretch;
+    padding: 0.5rem;
+  }
+
   .ticket-dialog {
     max-height: calc(100vh - 1rem);
   }
 
+  .blueprint-form-card :deep(.v-card-title) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ticket-form {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-dialog-close,
   .ticket-form-actions :deep(.v-btn) {
     flex: 1 1 10rem;
   }

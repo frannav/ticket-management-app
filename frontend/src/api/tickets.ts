@@ -39,8 +39,12 @@ export const buildTicketListUrl = (query: TicketListQuery = {}): URL => {
 
   if (query.page) params.set("page", String(query.page));
   if (query.page_size) params.set("page_size", String(query.page_size));
+  if (query.hotel_id?.trim()) params.set("hotel_id", query.hotel_id.trim());
+  if (query.channel) params.set("channel", query.channel);
   if (query.status) params.set("status", query.status);
   if (query.priority) params.set("priority", query.priority);
+  if (query.assigned_to?.trim()) params.set("assigned_to", query.assigned_to.trim());
+  if (query.q?.trim()) params.set("q", query.q.trim());
 
   url.search = params.toString();
   return url;

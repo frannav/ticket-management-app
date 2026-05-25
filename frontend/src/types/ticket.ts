@@ -35,8 +35,12 @@ export type TicketListResponse = {
 export type TicketListQuery = {
   page?: number;
   page_size?: number;
+  hotel_id?: string;
+  channel?: TicketChannel | "";
   status?: TicketStatus | "";
   priority?: TicketPriority | "";
+  assigned_to?: string;
+  q?: string;
 };
 
 export type CreateTicketPayload = {
