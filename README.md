@@ -73,6 +73,17 @@ Then open:
 
 During Vite development, the frontend leaves `VITE_API_BASE_URL` empty and uses the Vite `/api` proxy to `http://localhost:3001`.
 
+### Seed demo tickets
+
+To load persistent demo tickets for reviewing pagination and filters:
+
+```bash
+cd backend
+MONGODB_URI=mongodb://127.0.0.1:27017/thinkin_tickets npm run seed
+```
+
+The seed is idempotent and inserts 45 `[Demo NN]` tickets only once. They persist in the MongoDB Docker volume until the volume is removed.
+
 ## Environment variables
 
 ### Backend
