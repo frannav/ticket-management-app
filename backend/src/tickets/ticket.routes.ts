@@ -11,6 +11,8 @@ export const ticketRouter = Router();
 
 const notFound = () => notFoundHandler("Ticket not found");
 
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const findActiveTicketById = async (id: string): Promise<TicketDocument | null> => {
   if (!isValidObjectId(id)) {
     return null;
@@ -29,9 +31,10 @@ const buildListFilter = (query: ListTicketsQuery): TicketFilter => {
   }
 
   if (query.q) {
+    const escapedQuery = escapeRegex(query.q);
     filter.$or = [
-      { subject: { $regex: query.q, $options: "i" } },
-      { description: { $regex: query.q, $options: "i" } }
+      { subject: { $regex: escapedQuery, $options: "i" } },
+      { description: { $regex: escapedQuery, $options: "i" } }
     ];
   }
 

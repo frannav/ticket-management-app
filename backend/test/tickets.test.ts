@@ -96,6 +96,25 @@ describe("GET /api/v1/tickets", () => {
     expect(ids).toHaveLength(2);
   });
 
+  it("treats regex characters in q as literal text", async () => {
+    const literalMatch = await createTicket({ subject: "Literal air.* maintenance note", description: "Guest typed the exact marker." });
+    await createTicket({ subject: "Air conditioning broken", description: "The room is warm." });
+    await createTicket({ subject: "Air filter issue", description: "Needs replacement." });
+
+    const response = await request(app).get("/api/v1/tickets").query({ q: "air.*" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((ticket: { id: string }) => ticket.id)).toEqual([literalMatch.id]);
+  });
+
+  it("rejects q values over 100 characters", async () => {
+    const response = await request(app).get("/api/v1/tickets").query({ q: "x".repeat(101) });
+
+    expect(response.status).toBe(400);
+    expectStandardError(response.body, "VALIDATION_ERROR");
+    expect(JSON.stringify(response.body)).toContain("q");
+  });
+
   it("uses default pagination and supports custom pagination", async () => {
     for (let index = 0; index < 25; index += 1) {
       await createTicket({ subject: `Ticket ${index}` });

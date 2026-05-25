@@ -36,7 +36,7 @@ export const listTicketsQuerySchema = z.object({
   priority: z.enum(ticketPriorities).optional(),
   channel: z.enum(ticketChannels).optional(),
   assigned_to: z.string().trim().min(1).optional(),
-  q: z.string().trim().min(1).optional(),
+  q: z.string().trim().min(1).max(100, "q must be 100 characters or fewer").optional(),
   page: z.coerce.number().int().positive().default(1),
   page_size: z.coerce.number().int().positive().max(100, "page_size must be less than or equal to 100").default(20)
 });
