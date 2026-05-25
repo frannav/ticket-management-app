@@ -54,7 +54,7 @@ Integration tests use `MONGODB_TEST_URI` and clean ticket data between tests. En
 ```bash
 docker compose up -d mongodb
 cd backend
-npm test
+MONGODB_TEST_URI=mongodb://127.0.0.1:27017/thinkin_tickets_test npm test
 npm run build
 ```
 
