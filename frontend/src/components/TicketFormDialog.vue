@@ -170,7 +170,7 @@ const validate = (): boolean => {
   return Object.keys(errors).length === 0;
 };
 
-const buildPayload = (): CreateTicketPayload => {
+const buildCreatePayload = (): CreateTicketPayload => {
   const payload: CreateTicketPayload = {
     hotel_id: form.hotel_id,
     subject: form.subject,
@@ -185,6 +185,24 @@ const buildPayload = (): CreateTicketPayload => {
   return payload;
 };
 
+const buildEditPayload = (): UpdateTicketPayload => {
+  const source = props.ticket;
+  if (!source) return buildCreatePayload();
+
+  const payload: UpdateTicketPayload = {};
+  const assignedTo = form.assigned_to || null;
+
+  if (form.hotel_id !== source.hotel_id) payload.hotel_id = form.hotel_id;
+  if (form.subject !== source.subject) payload.subject = form.subject;
+  if (form.description !== source.description) payload.description = form.description;
+  if (form.channel !== source.channel) payload.channel = form.channel as TicketChannel;
+  if (form.priority !== source.priority) payload.priority = form.priority as TicketPriority;
+  if (form.status && form.status !== source.status) payload.status = form.status;
+  if (assignedTo !== source.assigned_to) payload.assigned_to = assignedTo;
+
+  return Object.keys(payload).length > 0 ? payload : buildCreatePayload();
+};
+
 const submit = async () => {
   if (!validate()) return;
 
@@ -193,9 +211,9 @@ const submit = async () => {
 
   try {
     if (props.mode === "edit" && props.ticket) {
-      await patchTicket(props.ticket.id, buildPayload() as UpdateTicketPayload);
+      await patchTicket(props.ticket.id, buildEditPayload());
     } else {
-      await createTicket(buildPayload());
+      await createTicket(buildCreatePayload());
     }
 
     emit("saved");

@@ -15,6 +15,6 @@ vi.stubGlobal("visualViewport", {
   offsetTop: 0,
   pageLeft: 0,
   pageTop: 0,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn()
+  addEventListener: vi.fn<() => void>(),
+  removeEventListener: vi.fn<() => void>()
 });

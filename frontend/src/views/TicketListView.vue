@@ -77,16 +77,18 @@
             Page {{ pagination.page }} of {{ Math.max(pagination.total_pages, 1) }} · {{ pagination.total }} total tickets
           </p>
           <div class="d-flex ga-2 flex-wrap">
-            <v-btn
-              v-for="pageNumber in visiblePages"
-              :key="pageNumber"
-              :color="pageNumber === pagination.page ? 'primary' : undefined"
-              :variant="pageNumber === pagination.page ? 'flat' : 'outlined'"
-              size="small"
-              @click="changePage(pageNumber)"
-            >
-              Page {{ pageNumber }}
-            </v-btn>
+            <template v-for="item in visiblePages" :key="item.key">
+              <v-btn
+                v-if="item.type === 'page'"
+                :color="item.value === pagination.page ? 'primary' : undefined"
+                :variant="item.value === pagination.page ? 'flat' : 'outlined'"
+                size="small"
+                @click="changePage(item.value)"
+              >
+                Page {{ item.value }}
+              </v-btn>
+              <span v-else class="pagination-ellipsis" aria-hidden="true">…</span>
+            </template>
           </div>
         </section>
       </v-card-text>
@@ -103,6 +105,7 @@ import TicketFormDialog from "../components/TicketFormDialog.vue";
 import { ticketPriorities, ticketStatuses, type Ticket, type TicketListPagination, type TicketListQuery } from "../types/ticket";
 
 const PAGE_SIZE = 20;
+const PAGINATION_RADIUS = 2;
 
 const tickets = ref<Ticket[]>([]);
 const isLoading = ref(false);
@@ -124,7 +127,32 @@ const isFormOpen = ref(false);
 const formMode = ref<"create" | "edit">("create");
 const selectedTicket = ref<Ticket | null>(null);
 
-const visiblePages = computed(() => Array.from({ length: Math.max(pagination.total_pages, 1) }, (_, index) => index + 1));
+type VisiblePage = { type: "page"; key: string; value: number } | { type: "ellipsis"; key: string };
+
+const visiblePages = computed<VisiblePage[]>(() => {
+  const totalPages = Math.max(pagination.total_pages, 1);
+  const currentPage = Math.min(Math.max(pagination.page, 1), totalPages);
+  const pageNumbers = new Set<number>([1, totalPages]);
+
+  for (let page = currentPage - PAGINATION_RADIUS; page <= currentPage + PAGINATION_RADIUS; page += 1) {
+    if (page >= 1 && page <= totalPages) {
+      pageNumbers.add(page);
+    }
+  }
+
+  const sortedPages = [...pageNumbers].sort((left, right) => left - right);
+
+  return sortedPages.flatMap((page, index) => {
+    const previous = sortedPages[index - 1];
+    const item: VisiblePage = { type: "page", key: `page-${page}`, value: page };
+
+    if (previous && page - previous > 1) {
+      return [{ type: "ellipsis", key: `ellipsis-${previous}-${page}` } satisfies VisiblePage, item];
+    }
+
+    return [item];
+  });
+});
 
 const formatDate = (value: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
@@ -215,6 +243,13 @@ onMounted(() => {
 
 .pagination {
   margin-block-start: 1.5rem;
+}
+
+.pagination-ellipsis {
+  align-items: center;
+  display: inline-flex;
+  min-height: 2rem;
+  padding-inline: 0.25rem;
 }
 
 @media (max-width: 600px) {

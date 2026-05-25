@@ -70,7 +70,7 @@ describe("TicketListView", () => {
     ["mobile", 390]
   ])("keeps the core ticket workflow reachable on %s width", async (_label, width) => {
     setViewportWidth(width);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
 
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
@@ -85,7 +85,7 @@ describe("TicketListView", () => {
 
   it("keeps the ticket list readable and actionable through a scrollable region on narrow screens", async () => {
     setViewportWidth(390);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
 
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
@@ -100,7 +100,7 @@ describe("TicketListView", () => {
   it("keeps filters operable in the responsive filter group while preserving query and page reset behavior", async () => {
     setViewportWidth(390);
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket()], { page: 1, page_size: 20, total: 2, total_pages: 2 })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Second page" })], { page: 2, page_size: 20, total: 2, total_pages: 2 })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Mobile status filtered", status: "in_progress" })], { page: 1, page_size: 20, total: 1, total_pages: 1 })))
@@ -129,7 +129,7 @@ describe("TicketListView", () => {
 
   it("keeps create and edit forms usable in mobile-friendly dialogs", async () => {
     setViewportWidth(390);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket({ subject: "Editable mobile ticket" })]))));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([ticket({ subject: "Editable mobile ticket" })]))));
 
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
@@ -157,34 +157,35 @@ describe("TicketListView", () => {
     expect(editDialog.findAll("button").some((button) => button.text().includes("Save changes"))).toBe(true);
   });
 
-  it.each([
-    ["loading", 390],
-    ["empty", 768],
-    ["error", 1280]
-  ])("keeps the %s list state readable in a responsive state container", async (state, width) => {
-    setViewportWidth(width);
+  it("keeps the loading list state readable in a responsive state container", async () => {
+    setViewportWidth(390);
+    const request = deferred<Response>();
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockReturnValue(request.promise));
 
-    if (state === "loading") {
-      const request = deferred<Response>();
-      vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
-      const wrapper = mountWithVuetify(TicketListView);
-      await flushPromises();
-      expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("Loading tickets...");
-      request.resolve(jsonResponse(listResponse([])));
-      return;
-    }
+    const wrapper = mountWithVuetify(TicketListView);
+    await flushPromises();
 
-    if (state === "empty") {
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([]))));
-      const wrapper = mountWithVuetify(TicketListView);
-      await waitForLoaded();
-      expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("No tickets found for the current query.");
-      return;
-    }
+    expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("Loading tickets...");
+    request.resolve(jsonResponse(listResponse([])));
+  });
 
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ error: { message: "Readable failure" } }, { status: 500 })));
+  it("keeps the empty list state readable in a responsive state container", async () => {
+    setViewportWidth(768);
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([]))));
+
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
+
+    expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("No tickets found for the current query.");
+  });
+
+  it("keeps the error list state readable in a responsive state container", async () => {
+    setViewportWidth(1280);
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ error: { message: "Readable failure" } }, { status: 500 })));
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
     const stateContainer = wrapper.find('[data-testid="ticket-list-state"]');
     expect(stateContainer.text()).toContain("Readable failure");
     expect(stateContainer.findAll("button").some((button) => button.text().includes("Retry"))).toBe(true);
@@ -192,7 +193,7 @@ describe("TicketListView", () => {
 
   it("shows a loading state while the list request is pending", async () => {
     const request = deferred<Response>();
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockReturnValue(request.promise));
 
     const wrapper = mountWithVuetify(TicketListView);
     await flushPromises();
@@ -205,7 +206,7 @@ describe("TicketListView", () => {
   });
 
   it("renders returned tickets in a table with required columns and clear unassigned value", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket({ assigned_to: null })]))));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([ticket({ assigned_to: null })]))));
 
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
@@ -225,7 +226,7 @@ describe("TicketListView", () => {
 
   it("shows an empty state and no stale rows when the API returns no tickets", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Old ticket" })])))
       .mockResolvedValueOnce(jsonResponse(listResponse([], { page: 1, page_size: 20, total: 0, total_pages: 0 })));
     vi.stubGlobal("fetch", fetchSpy);
@@ -243,7 +244,7 @@ describe("TicketListView", () => {
 
   it("shows a user-facing error state with a retry path on API failure", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse({ error: { message: "Database temporarily unavailable" } }, { status: 503 }))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Recovered ticket" })])));
     vi.stubGlobal("fetch", fetchSpy);
@@ -263,7 +264,7 @@ describe("TicketListView", () => {
 
   it("selecting a status filter sends the status query parameter and renders filtered results", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Initial ticket" })])))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Resolved ticket", status: "resolved" })])));
     vi.stubGlobal("fetch", fetchSpy);
@@ -281,7 +282,7 @@ describe("TicketListView", () => {
 
   it("clearing the status filter omits status from the next query", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket()])))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Filtered ticket", status: "closed" })])))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Unfiltered ticket" })])));
@@ -301,7 +302,7 @@ describe("TicketListView", () => {
 
   it("selecting and clearing a priority filter updates the query and rendered results", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket()])))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Urgent ticket", priority: "urgent" })])))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Any priority ticket" })])));
@@ -325,7 +326,7 @@ describe("TicketListView", () => {
   });
 
   it("uses page one initially and displays pagination metadata", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
+    const fetchSpy = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse(
         listResponse([ticket()], {
           page: 1,
@@ -345,9 +346,37 @@ describe("TicketListView", () => {
     expect(wrapper.text()).toContain("Page 1 of 3 · 42 total tickets");
   });
 
+  it("renders compact pagination with first, last, nearby pages, and ellipses", async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page ten" })], { page: 10, page_size: 20, total: 400, total_pages: 20 })))
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page twelve" })], { page: 12, page_size: 20, total: 400, total_pages: 20 })));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
+    const pageButtons = wrapper
+      .findAll("button")
+      .map((button) => button.text().trim())
+      .filter((text) => text.startsWith("Page "));
+    expect(pageButtons).toEqual(["Page 1", "Page 8", "Page 9", "Page 10", "Page 11", "Page 12", "Page 20"]);
+    expect(wrapper.findAll(".pagination-ellipsis")).toHaveLength(2);
+    expect(pageButtons).not.toContain("Page 2");
+    expect(pageButtons).not.toContain("Page 19");
+
+    const pageTwelve = wrapper.findAll("button").find((button) => button.text().includes("Page 12"));
+    await pageTwelve!.trigger("click");
+    await waitForLoaded();
+
+    const requestedUrl = new URL(String(fetchSpy.mock.calls[1][0]));
+    expect(requestedUrl.searchParams.get("page")).toBe("12");
+    expect(wrapper.text()).toContain("Page twelve");
+  });
+
   it("changing page sends the selected page query parameter and renders page results", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page one" })], { page: 1, page_size: 20, total: 2, total_pages: 2 })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page two" })], { page: 2, page_size: 20, total: 2, total_pages: 2 })));
     vi.stubGlobal("fetch", fetchSpy);
@@ -367,7 +396,7 @@ describe("TicketListView", () => {
 
   it("changing filters resets pagination to page one", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page one" })], { page: 1, page_size: 20, total: 2, total_pages: 2 })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Page two" })], { page: 2, page_size: 20, total: 2, total_pages: 2 })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Filtered first page", status: "open" })], { page: 1, page_size: 20, total: 1, total_pages: 1 })));
@@ -387,7 +416,7 @@ describe("TicketListView", () => {
   });
 
   it("submitting an empty create form shows validation messages and does not call POST", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(jsonResponse(listResponse([])));
+    const fetchSpy = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([])));
     vi.stubGlobal("fetch", fetchSpy);
 
     const wrapper = mountWithVuetify(TicketListView);
@@ -408,7 +437,7 @@ describe("TicketListView", () => {
   });
 
   it("rejects a subject longer than 200 characters before calling the API", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(jsonResponse(listResponse([])));
+    const fetchSpy = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([])));
     vi.stubGlobal("fetch", fetchSpy);
 
     const wrapper = mountWithVuetify(TicketListView);
@@ -432,7 +461,7 @@ describe("TicketListView", () => {
 
   it("submits a valid create payload, refreshes the list, and closes the form", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([])))
       .mockResolvedValueOnce(jsonResponse(ticket({ id: "created-ticket", subject: "New ticket", priority: "medium", channel: "email" }), { status: 201 }))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "created-ticket", subject: "New ticket", priority: "medium", channel: "email" })])));
@@ -468,7 +497,7 @@ describe("TicketListView", () => {
 
   it("shows create API failures and preserves entered values", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([])))
       .mockResolvedValueOnce(jsonResponse({ error: { message: "Create validation failed" } }, { status: 400 }));
     vi.stubGlobal("fetch", fetchSpy);
@@ -493,7 +522,7 @@ describe("TicketListView", () => {
   });
 
   it("opens edit with existing values populated", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket({ subject: "Original subject", assigned_to: "Ana" })]))));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(listResponse([ticket({ subject: "Original subject", assigned_to: "Ana" })]))));
 
     const wrapper = mountWithVuetify(TicketListView);
     await waitForLoaded();
@@ -507,7 +536,7 @@ describe("TicketListView", () => {
 
   it("submits valid edits through PATCH and reflects updated ticket data after refresh", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "ticket-1", subject: "Original subject" })])))
       .mockResolvedValueOnce(jsonResponse(ticket({ id: "ticket-1", subject: "Updated subject", priority: "urgent" })))
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "ticket-1", subject: "Updated subject", priority: "urgent" })])));
@@ -535,9 +564,34 @@ describe("TicketListView", () => {
     expect(wrapper.text()).not.toContain("Original subject");
   });
 
+  it("sends assigned_to null when editing clears an existing assignee", async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "ticket-1", subject: "Assigned ticket", assigned_to: "Ana" })])))
+      .mockResolvedValueOnce(jsonResponse(ticket({ id: "ticket-1", subject: "Assigned ticket", assigned_to: null })))
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "ticket-1", subject: "Assigned ticket", assigned_to: null })])));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+    const editButton = wrapper.findAll("button").find((button) => button.text().includes("Edit Assigned ticket"));
+    await editButton!.trigger("click");
+    await waitForLoaded();
+
+    await wrapper.find('input[aria-label="Assigned to"]').setValue("");
+    const submitButton = wrapper.findAll("button").find((button) => button.text().includes("Save changes"));
+    await submitButton!.trigger("click");
+    await waitForLoaded();
+
+    expect(String(fetchSpy.mock.calls[1][0])).toBe("https://tickets.example.test/api/v1/tickets/ticket-1");
+    expect(fetchSpy.mock.calls[1][1]).toMatchObject({ method: "PATCH" });
+    expect(JSON.parse(String(fetchSpy.mock.calls[1][1]?.body))).toEqual({ assigned_to: null });
+    expect(wrapper.text()).toContain("Unassigned");
+  });
+
   it("shows edit API failures without replacing the row with unconfirmed data", async () => {
     const fetchSpy = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ id: "ticket-1", subject: "Original subject" })])))
       .mockResolvedValueOnce(jsonResponse({ error: { message: "Edit failed" } }, { status: 500 }));
     vi.stubGlobal("fetch", fetchSpy);

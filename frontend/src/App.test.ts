@@ -10,7 +10,7 @@ describe("App", () => {
   it("mounts the Vuetify ticket management shell", () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
+      vi.fn<typeof fetch>().mockResolvedValue(
         new Response(
           JSON.stringify({
             data: [],

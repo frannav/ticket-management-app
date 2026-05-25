@@ -19,7 +19,7 @@ describe("ticket API client", () => {
   });
 
   it("builds GET requests from VITE_API_BASE_URL with pagination and filters", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
+    const fetchSpy = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
         data: [],
         pagination: { page: 2, page_size: 10, total: 0, total_pages: 0 }
@@ -50,7 +50,7 @@ describe("ticket API client", () => {
   it("normalizes backend error responses into user-facing API errors", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
+      vi.fn<typeof fetch>().mockResolvedValue(
         jsonResponse(
           {
             error: {
@@ -73,7 +73,7 @@ describe("ticket API client", () => {
   });
 
   it("normalizes unexpected network failures without exposing stack traces", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("socket hang up")));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockRejectedValue(new Error("socket hang up")));
 
     await expect(listTickets({ page: 1, page_size: 20 })).rejects.toThrow(TicketApiError);
     await expect(listTickets({ page: 1, page_size: 20 })).rejects.toThrow("Unable to reach the ticket API");
@@ -93,7 +93,9 @@ describe("ticket API client", () => {
       updated_at: "2026-05-25T10:00:00.000Z",
       deleted_at: null
     };
-    const fetchSpy = vi.fn().mockResolvedValueOnce(jsonResponse(ticketPayload)).mockResolvedValueOnce(jsonResponse({ ...ticketPayload, subject: "Fixed sink" }));
+    const fetchSpy = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(ticketPayload))
+      .mockResolvedValueOnce(jsonResponse({ ...ticketPayload, subject: "Fixed sink" }));
     vi.stubGlobal("fetch", fetchSpy);
 
     await createTicket({

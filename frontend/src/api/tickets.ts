@@ -76,11 +76,11 @@ const requestJson = async <T>(input: RequestInfo | URL, init?: RequestInit): Pro
 
   try {
     response = await fetch(input, {
+      ...init,
       headers: {
         "Content-Type": "application/json",
-        ...(init?.headers ?? {})
-      },
-      ...init
+        ...init?.headers
+      }
     });
   } catch {
     throw new TicketApiError("Unable to reach the ticket API. Please check that the backend is running.");
