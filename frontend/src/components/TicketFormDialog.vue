@@ -1,5 +1,10 @@
 <template>
-  <section v-if="modelValue" role="dialog" :aria-label="mode === 'create' ? 'Create ticket' : 'Edit ticket'">
+  <section
+    v-if="modelValue"
+    class="ticket-dialog ticket-dialog--mobile-friendly"
+    role="dialog"
+    :aria-label="mode === 'create' ? 'Create ticket' : 'Edit ticket'"
+  >
     <v-card class="mt-4">
       <v-card-title>{{ mode === "create" ? "Create ticket" : "Edit ticket" }}</v-card-title>
       <v-card-text>
@@ -55,7 +60,7 @@
             <input v-model.trim="form.assigned_to" aria-label="Assigned to" />
           </label>
 
-          <div class="d-flex ga-2 mt-4">
+          <div class="ticket-form-actions d-flex ga-2 mt-4">
             <v-btn color="primary" type="submit" :loading="isSubmitting">{{ mode === "create" ? "Create" : "Save changes" }}</v-btn>
             <v-btn variant="text" type="button" @click="$emit('update:modelValue', false)">Cancel</v-btn>
           </div>
@@ -211,6 +216,11 @@ const submit = async () => {
   gap: 1rem;
 }
 
+.ticket-dialog {
+  max-height: min(42rem, calc(100vh - 2rem));
+  overflow-y: auto;
+}
+
 .ticket-form label {
   display: grid;
   gap: 0.25rem;
@@ -229,8 +239,28 @@ const submit = async () => {
   min-height: 6rem;
 }
 
+.ticket-form input,
+.ticket-form select,
+.ticket-form textarea {
+  width: 100%;
+}
+
+.ticket-form-actions {
+  flex-wrap: wrap;
+}
+
 [role="alert"] {
   color: rgb(var(--v-theme-error));
   font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .ticket-dialog {
+    max-height: calc(100vh - 1rem);
+  }
+
+  .ticket-form-actions :deep(.v-btn) {
+    flex: 1 1 10rem;
+  }
 }
 </style>

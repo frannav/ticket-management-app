@@ -1,13 +1,13 @@
 <template>
-  <v-container class="py-8">
+  <v-container class="ticket-page py-8" fluid>
     <v-card>
-      <v-card-title class="d-flex align-center justify-space-between ga-4">
+      <v-card-title class="ticket-header d-flex align-center justify-space-between ga-4">
         <span>Ticket management</span>
         <v-btn color="primary" @click="openCreateForm">Create ticket</v-btn>
       </v-card-title>
 
       <v-card-text>
-        <form class="ticket-filters" aria-label="Ticket filters">
+        <form class="ticket-filters ticket-filters--responsive" aria-label="Ticket filters">
           <label>
             Status
             <select v-model="query.status" aria-label="Status filter" @change="onFilterChange">
@@ -29,42 +29,46 @@
           </label>
         </form>
 
-        <v-progress-linear v-if="isLoading" class="my-4" indeterminate role="status" aria-label="Loading tickets" />
-        <p v-if="isLoading">Loading tickets...</p>
+        <div v-if="isLoading" class="ticket-list-state my-4" data-testid="ticket-list-state">
+          <v-progress-linear indeterminate role="status" aria-label="Loading tickets" />
+          <p>Loading tickets...</p>
+        </div>
 
-        <v-alert v-if="listError" class="my-4" type="error" role="alert">
+        <v-alert v-if="listError" class="ticket-list-state my-4" data-testid="ticket-list-state" type="error" role="alert">
           {{ listError }}
           <v-btn class="ml-4" variant="outlined" @click="loadTickets">Retry</v-btn>
         </v-alert>
 
-        <v-table v-if="!listError && tickets.length > 0">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Channel</th>
-              <th>Status</th>
-              <th>Priority</th>
-              <th>Assigned to</th>
-              <th>Created at</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="ticket in tickets" :key="ticket.id">
-              <td>{{ ticket.subject }}</td>
-              <td>{{ ticket.channel }}</td>
-              <td>{{ ticket.status }}</td>
-              <td>{{ ticket.priority }}</td>
-              <td>{{ ticket.assigned_to || "Unassigned" }}</td>
-              <td>{{ formatDate(ticket.created_at) }}</td>
-              <td>
-                <v-btn size="small" variant="text" @click="openEditForm(ticket)">Edit {{ ticket.subject }}</v-btn>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+        <div v-if="!listError && tickets.length > 0" class="ticket-table-scroll" role="region" aria-label="Scrollable ticket list" tabindex="0">
+          <v-table class="ticket-table">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Channel</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Assigned to</th>
+                <th>Created at</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ticket in tickets" :key="ticket.id">
+                <td>{{ ticket.subject }}</td>
+                <td>{{ ticket.channel }}</td>
+                <td>{{ ticket.status }}</td>
+                <td>{{ ticket.priority }}</td>
+                <td>{{ ticket.assigned_to || "Unassigned" }}</td>
+                <td>{{ formatDate(ticket.created_at) }}</td>
+                <td>
+                  <v-btn size="small" variant="text" @click="openEditForm(ticket)">Edit {{ ticket.subject }}</v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
 
-        <v-alert v-if="!isLoading && !listError && tickets.length === 0" class="my-4" type="info">
+        <v-alert v-if="!isLoading && !listError && tickets.length === 0" class="ticket-list-state my-4" data-testid="ticket-list-state" type="info">
           No tickets found for the current query.
         </v-alert>
 
@@ -196,7 +200,49 @@ onMounted(() => {
   padding: 0.5rem;
 }
 
+.ticket-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ticket-table {
+  min-width: 56rem;
+}
+
+.ticket-list-state {
+  overflow-wrap: anywhere;
+}
+
 .pagination {
   margin-block-start: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .ticket-page {
+    padding-inline: 0.75rem;
+  }
+
+  .ticket-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ticket-header :deep(.v-btn) {
+    width: 100%;
+  }
+
+  .ticket-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-filters select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pagination :deep(.v-btn) {
+    flex: 1 1 8rem;
+  }
 }
 </style>

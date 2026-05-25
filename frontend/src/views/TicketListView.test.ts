@@ -47,6 +47,11 @@ const waitForLoaded = async () => {
   await flushPromises();
 };
 
+const setViewportWidth = (width: number) => {
+  vi.stubGlobal("innerWidth", width);
+  window.dispatchEvent(new Event("resize"));
+};
+
 describe("TicketListView", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_API_BASE_URL", "https://tickets.example.test");
@@ -56,6 +61,133 @@ describe("TicketListView", () => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
     document.body.innerHTML = "";
+  });
+
+
+  it.each([
+    ["desktop", 1280],
+    ["tablet", 768],
+    ["mobile", 390]
+  ])("keeps the core ticket workflow reachable on %s width", async (_label, width) => {
+    setViewportWidth(width);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
+    expect(wrapper.text()).toContain("Ticket management");
+    expect(wrapper.find('select[aria-label="Status filter"]').exists()).toBe(true);
+    expect(wrapper.find('select[aria-label="Priority filter"]').exists()).toBe(true);
+    expect(wrapper.findAll("button").some((button) => button.text().includes("Create ticket"))).toBe(true);
+    expect(wrapper.text()).toContain("Broken air conditioning");
+    expect(wrapper.text()).toContain("Page 1 of 1");
+  });
+
+  it("keeps the ticket list readable and actionable through a scrollable region on narrow screens", async () => {
+    setViewportWidth(390);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket()]))));
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
+    const listRegion = wrapper.find('[role="region"][aria-label="Scrollable ticket list"]');
+    expect(listRegion.exists()).toBe(true);
+    expect(listRegion.text()).toContain("Subject");
+    expect(listRegion.text()).toContain("Broken air conditioning");
+    expect(listRegion.findAll("button").some((button) => button.text().includes("Edit Broken air conditioning"))).toBe(true);
+  });
+
+  it("keeps filters operable in the responsive filter group while preserving query and page reset behavior", async () => {
+    setViewportWidth(390);
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket()], { page: 1, page_size: 20, total: 2, total_pages: 2 })))
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Second page" })], { page: 2, page_size: 20, total: 2, total_pages: 2 })))
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Mobile status filtered", status: "in_progress" })], { page: 1, page_size: 20, total: 1, total_pages: 1 })))
+      .mockResolvedValueOnce(jsonResponse(listResponse([ticket({ subject: "Mobile filtered", status: "in_progress", priority: "low" })], { page: 1, page_size: 20, total: 1, total_pages: 1 })));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+    const filters = wrapper.find('form[aria-label="Ticket filters"]');
+    expect(filters.classes()).toContain("ticket-filters--responsive");
+
+    const pageTwo = wrapper.findAll("button").find((button) => button.text().includes("Page 2"));
+    await pageTwo!.trigger("click");
+    await waitForLoaded();
+
+    await wrapper.find('select[aria-label="Status filter"]').setValue("in_progress");
+    await wrapper.find('select[aria-label="Priority filter"]').setValue("low");
+    await waitForLoaded();
+
+    const requestedUrl = new URL(String(fetchSpy.mock.calls.at(-1)?.[0]));
+    expect(requestedUrl.searchParams.get("page")).toBe("1");
+    expect(requestedUrl.searchParams.get("status")).toBe("in_progress");
+    expect(requestedUrl.searchParams.get("priority")).toBe("low");
+    expect(wrapper.text()).toContain("Mobile filtered");
+  });
+
+  it("keeps create and edit forms usable in mobile-friendly dialogs", async () => {
+    setViewportWidth(390);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([ticket({ subject: "Editable mobile ticket" })]))));
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
+    const createButton = wrapper.findAll("button").find((button) => button.text().includes("Create ticket"));
+    await createButton!.trigger("click");
+    await waitForLoaded();
+
+    const createDialog = wrapper.find('[role="dialog"][aria-label="Create ticket"]');
+    expect(createDialog.classes()).toContain("ticket-dialog--mobile-friendly");
+    expect(createDialog.find('input[aria-label="Hotel ID"]').exists()).toBe(true);
+    expect(createDialog.find('textarea[aria-label="Description"]').exists()).toBe(true);
+    expect(createDialog.findAll("button").some((button) => button.text() === "Create")).toBe(true);
+    expect(createDialog.findAll("button").some((button) => button.text() === "Cancel")).toBe(true);
+
+    await createDialog.findAll("button").find((button) => button.text() === "Cancel")!.trigger("click");
+    await waitForLoaded();
+    const editButton = wrapper.findAll("button").find((button) => button.text().includes("Edit Editable mobile ticket"));
+    await editButton!.trigger("click");
+    await waitForLoaded();
+
+    const editDialog = wrapper.find('[role="dialog"][aria-label="Edit ticket"]');
+    expect(editDialog.classes()).toContain("ticket-dialog--mobile-friendly");
+    expect((editDialog.find('input[aria-label="Subject"]').element as HTMLInputElement).value).toBe("Editable mobile ticket");
+    expect(editDialog.findAll("button").some((button) => button.text().includes("Save changes"))).toBe(true);
+  });
+
+  it.each([
+    ["loading", 390],
+    ["empty", 768],
+    ["error", 1280]
+  ])("keeps the %s list state readable in a responsive state container", async (state, width) => {
+    setViewportWidth(width);
+
+    if (state === "loading") {
+      const request = deferred<Response>();
+      vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
+      const wrapper = mountWithVuetify(TicketListView);
+      await flushPromises();
+      expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("Loading tickets...");
+      request.resolve(jsonResponse(listResponse([])));
+      return;
+    }
+
+    if (state === "empty") {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(listResponse([]))));
+      const wrapper = mountWithVuetify(TicketListView);
+      await waitForLoaded();
+      expect(wrapper.find('[data-testid="ticket-list-state"]').text()).toContain("No tickets found for the current query.");
+      return;
+    }
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ error: { message: "Readable failure" } }, { status: 500 })));
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+    const stateContainer = wrapper.find('[data-testid="ticket-list-state"]');
+    expect(stateContainer.text()).toContain("Readable failure");
+    expect(stateContainer.findAll("button").some((button) => button.text().includes("Retry"))).toBe(true);
   });
 
   it("shows a loading state while the list request is pending", async () => {
