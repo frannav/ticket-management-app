@@ -60,8 +60,35 @@ describe("GET /api/v1/tickets", () => {
       total: 1,
       total_pages: 1
     });
+    expect(response.body.summary).toEqual({
+      open_circuits: 1,
+      urgent_load: 0,
+      assigned_tickets: 0
+    });
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].id).toBe(kept.id);
+  });
+
+  it("returns summary metrics for the full filtered result set, not only the current page", async () => {
+    for (let index = 0; index < 24; index += 1) {
+      await createTicket({
+        subject: `Open page-spanning ticket ${index}`,
+        status: index < 22 ? "open" : "closed",
+        priority: index % 5 === 0 ? "urgent" : "medium",
+        assigned_to: index % 3 === 0 ? "agent-1" : null
+      });
+    }
+
+    const response = await request(app).get("/api/v1/tickets").query({ page: 2, page_size: 10 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(10);
+    expect(response.body.pagination).toMatchObject({ page: 2, page_size: 10, total: 24, total_pages: 3 });
+    expect(response.body.summary).toEqual({
+      open_circuits: 22,
+      urgent_load: 5,
+      assigned_tickets: 8
+    });
   });
 
   it("filters tickets by hotel_id, status, priority, channel, and assigned_to", async () => {

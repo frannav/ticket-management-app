@@ -41,6 +41,10 @@ const buildListFilter = (query: ListTicketsQuery): TicketFilter => {
   return filter;
 };
 
+const withListMetric = (filter: TicketFilter, metricFilter: TicketFilter): TicketFilter => ({
+  $and: [filter, metricFilter]
+});
+
 ticketRouter.post("/", validateBody(createTicketSchema), async (req, res, next) => {
   try {
     const ticket = await TicketModel.create(req.body);
@@ -56,9 +60,12 @@ ticketRouter.get("/", validateQuery(listTicketsQuerySchema), async (_req, res, n
     const filter = buildListFilter(query);
     const skip = (query.page - 1) * query.page_size;
 
-    const [tickets, total] = await Promise.all([
+    const [tickets, total, openCircuits, urgentLoad, assignedTickets] = await Promise.all([
       TicketModel.find(filter).sort({ created_at: -1 }).skip(skip).limit(query.page_size),
-      TicketModel.countDocuments(filter)
+      TicketModel.countDocuments(filter),
+      TicketModel.countDocuments(withListMetric(filter, { status: { $in: ["open", "in_progress"] } })),
+      TicketModel.countDocuments(withListMetric(filter, { priority: "urgent" })),
+      TicketModel.countDocuments(withListMetric(filter, { assigned_to: { $ne: null } }))
     ]);
 
     res.json({
@@ -68,6 +75,11 @@ ticketRouter.get("/", validateQuery(listTicketsQuerySchema), async (_req, res, n
         page_size: query.page_size,
         total,
         total_pages: Math.ceil(total / query.page_size)
+      },
+      summary: {
+        open_circuits: openCircuits,
+        urgent_load: urgentLoad,
+        assigned_tickets: assignedTickets
       }
     });
   } catch (error) {
