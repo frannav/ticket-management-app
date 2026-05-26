@@ -8,57 +8,32 @@ dotenv.config();
 const mongodbUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/thinkin_tickets";
 
 const guestIssues = [
-  "Air conditioning calibration required",
-  "Late checkout approval pending",
-  "Spa booking confirmation missing",
-  "Airport transfer delayed",
-  "Invoice details need correction",
-  "Room service order duplicated",
-  "Pool access card not working",
-  "Noise complaint from adjacent room",
-  "Lost luggage follow-up needed",
-  "Restaurant allergy note missing",
-  "Housekeeping refresh requested",
-  "Wi-Fi speed complaint",
-  "Maintenance inspection for shower",
-  "Minibar charge disputed",
-  "Extra bed setup pending",
-  "VIP welcome amenity delayed",
-  "Parking gate access blocked",
-  "Early breakfast box requested",
-  "Conference room projector issue",
-  "Pet policy clarification requested",
-  "Wake-up call confirmation",
-  "Laundry delivery late",
-  "Accessible room equipment check",
-  "Booking name mismatch",
-  "Terrace door lock inspection",
-  "Guest profile merge request",
-  "Taxi receipt copy needed",
-  "Baby cot setup pending",
-  "Gym access code not received",
-  "Refund timeline question",
-  "Sofa bed linen missing",
-  "Digital key activation failed",
-  "Room move preference captured",
-  "Welcome drink voucher missing",
-  "Safe reset assistance requested",
-  "Tour pickup location unclear",
-  "Late-night dining options requested",
-  "Heating panel troubleshooting",
-  "Check-in document upload failed",
-  "Celebration cake confirmation",
-  "Beach towel deposit question",
-  "Elevator outage guest update",
-  "Reservation extension inquiry",
-  "Pillow menu request",
-  "Final bill pre-review"
+  "AC issue",
+  "Late checkout",
+  "Spa booking",
+  "Airport transfer",
+  "Invoice fix",
+  "Room service",
+  "Pool card",
+  "Noise complaint",
+  "Lost luggage",
+  "Allergy note",
+  "Housekeeping",
+  "Wi-Fi speed",
+  "Shower check",
+  "Minibar dispute",
+  "Extra bed",
+  "VIP amenity",
+  "Parking access",
+  "Breakfast box",
+  "Projector issue",
+  "Pet policy"
 ] as const;
 
 const agents = ["ana", "bruno", "carla", "diego", "elena", null] as const;
 const hotels = ["hotel-atlantic", "hotel-volcan", "hotel-marina", "hotel-botanico", "hotel-dunas"] as const;
 
-const sampleTickets = guestIssues.map((subject, index): Ticket => {
+const sampleTickets = guestIssues.slice(0, 20).map((subject, index): Ticket => {
   const channel = ticketChannels[index % ticketChannels.length]!;
   const status = ticketStatuses[index % ticketStatuses.length]!;
   const priority = ticketPriorities[(index * 2 + 1) % ticketPriorities.length]!;
@@ -82,6 +57,12 @@ const sampleTickets = guestIssues.map((subject, index): Ticket => {
 const seedTickets = async () => {
   await connectDatabase(mongodbUri);
 
+  const demoSubjects = sampleTickets.map((ticket) => ticket.subject);
+  const demoRegex = /^\[Demo \d+\]/;
+  const removedOutdated = await TicketModel.deleteMany({
+    $and: [{ subject: demoRegex }, { subject: { $nin: demoSubjects } }]
+  });
+
   const operations = sampleTickets.map((ticket) => ({
     updateOne: {
       filter: { hotel_id: ticket.hotel_id, subject: ticket.subject },
@@ -91,13 +72,14 @@ const seedTickets = async () => {
   }));
 
   const result = await TicketModel.collection.bulkWrite(operations, { ordered: false });
-  const totalDemoTickets = await TicketModel.countDocuments({ subject: /^\[Demo \d+\]/, deleted_at: null });
+  const totalDemoTickets = await TicketModel.countDocuments({ subject: demoRegex, deleted_at: null });
 
   console.log(
     JSON.stringify(
       {
         message: "Demo ticket seed completed",
         mongodbUri,
+        removedOutdated: removedOutdated.deletedCount,
         inserted: result.upsertedCount,
         matchedExisting: result.matchedCount,
         totalDemoTickets
@@ -111,8 +93,8 @@ const seedTickets = async () => {
 try {
   await seedTickets();
 } catch (error: unknown) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
 } finally {
   await disconnectDatabase();
 }
