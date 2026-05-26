@@ -4,9 +4,9 @@ Full-stack technical-test submission for a simplified hotel contact-center ticke
 
 - `/backend` — Node.js + TypeScript + Express API for ticket CRUD, filtering, pagination, validation, soft delete, and consistent errors.
 - `/frontend` — Vue 3 + TypeScript + Vuetify UI for listing, filtering, creating, and editing tickets.
-- `docker-compose.yml` — local MongoDB infrastructure and an optional backend container path.
+- `docker-compose.yml` — local Docker stack for MongoDB, the backend API, and the frontend UI.
 
-The default reviewer workflow uses Docker Compose for MongoDB and local `npm` commands for the backend and frontend.
+The default reviewer workflow uses Docker Compose to start the complete application. Local `npm` commands are still available for focused backend or frontend development.
 
 ## Tech stack
 
@@ -16,15 +16,32 @@ The default reviewer workflow uses Docker Compose for MongoDB and local `npm` co
 | Frontend | Vue 3, TypeScript, Vite, Vuetify |
 | Database | MongoDB 7 |
 | Testing | Vitest, Supertest, Vue Test Utils, happy-dom |
-| Local infrastructure | Docker Compose for MongoDB and optional backend container build |
+| Local infrastructure | Docker Compose for MongoDB, backend, and frontend |
 
 ## Prerequisites
 
-- Node.js 22+
-- npm
-- Docker Desktop or Docker Engine with Docker Compose
+- Docker Desktop or Docker Engine with Docker Compose for the full Docker workflow.
+- Node.js 22+ and npm only if you want to run the backend or frontend directly on the host.
 
-## Local setup
+## Quick start with Docker
+
+From a clean checkout:
+
+```bash
+docker compose up -d --build
+```
+
+Then open:
+
+- Frontend: `http://localhost:5173`
+- Backend health check: `http://localhost:3001/health`
+- Ticket API base path: `http://localhost:3001/api/v1/tickets`
+
+The frontend container serves the built Vue app with Nginx and proxies `/api` requests to the backend service inside the Compose network.
+
+If you already have local npm dev servers running on ports `5173` or `3001`, stop them before relying on the Docker-published ports.
+
+## Local npm setup
 
 From a clean checkout:
 
@@ -43,7 +60,7 @@ npm ci
 cp .env.example .env
 ```
 
-## Run the app locally
+## Run the app locally with npm
 
 Use three terminals:
 
@@ -82,7 +99,7 @@ cd backend
 MONGODB_URI=mongodb://127.0.0.1:27017/thinkin_tickets npm run seed
 ```
 
-The seed is idempotent and inserts 45 `[Demo NN]` tickets only once. They persist in the MongoDB Docker volume until the volume is removed.
+The seed is idempotent and keeps 20 `[Demo NN]` tickets. They persist in the MongoDB Docker volume until the volume is removed.
 
 ## Environment variables
 
@@ -101,7 +118,7 @@ In Docker Compose, the backend service uses the container-network URI `mongodb:/
 
 | Variable | Example | Purpose |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | empty locally | Backend origin. Leave empty for local Vite proxying; set a full API origin for a deployed frontend when CORS or same-origin routing is configured. |
+| `VITE_API_BASE_URL` | empty locally and in Docker | Backend origin. Leave empty for local Vite proxying and for Docker's Nginx `/api` proxy; set a full API origin for a deployed frontend when CORS or same-origin routing is configured. |
 
 ## Tests and builds
 
@@ -152,7 +169,24 @@ Backend tests require MongoDB, for example `docker compose up -d mongodb` with `
 
 ## Docker Compose
 
-MongoDB is the default Compose dependency:
+Start the complete stack:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+Services:
+
+| Service | Container | Host URL / port |
+| --- | --- | --- |
+| `frontend` | `thinkin-ticket-api-frontend` | `http://localhost:5173` |
+| `backend` | `thinkin-ticket-api-backend` | `http://localhost:3001` |
+| `mongodb` | `thinkin-ticket-api-mongodb` | `localhost:27017` |
+
+The frontend container serves the production build with Nginx. It keeps `VITE_API_BASE_URL` empty, so browser API calls go to the same origin (`/api/...`), and Nginx proxies them to `http://backend:3001` over Docker networking.
+
+MongoDB can still be started by itself when running the apps locally with npm:
 
 ```bash
 docker compose up -d mongodb
@@ -166,15 +200,6 @@ Configuration:
 - Persistent volume: `mongodb_data`
 - Health check: `mongosh --eval "db.adminCommand('ping').ok"`
 
-Optional backend container verification:
-
-```bash
-docker compose --profile app build backend
-docker compose --profile app up -d backend
-```
-
-The frontend is intentionally not included as a Compose service. For review and development, `npm run dev` keeps Vite fast, transparent, and aligned with the required `VITE_API_BASE_URL`/proxy behavior.
-
 ## TDD-oriented approach
 
 - Backend endpoint behavior is covered with Vitest + Supertest integration tests against MongoDB for create, list/filter/pagination, retrieve, update, soft delete, validation, and standard error responses.
@@ -187,8 +212,8 @@ The frontend is intentionally not included as a Compose service. For review and 
 - **Soft delete:** `DELETE` sets `deleted_at` so ticket history can be retained while normal reads exclude deleted tickets.
 - **Consistent error shape:** Validation, not-found, and unexpected errors return stable JSON without leaking stack traces.
 - **Vue + Vuetify without extra global state:** The UI is small enough for local component state and API-client helpers; adding Pinia would be unnecessary ceremony for this scope.
-- **Docker Compose for infrastructure, local npm for apps:** Compose makes MongoDB reproducible while local app commands are faster for reviewers to inspect and debug.
-- **Frontend same-origin default:** Empty `VITE_API_BASE_URL` uses the Vite proxy locally and can be replaced with a deployed API origin later.
+- **Docker Compose for the full local stack:** Compose makes MongoDB, the API, and the UI reproducible from one command while local npm commands remain available for fast development loops.
+- **Frontend same-origin default:** Empty `VITE_API_BASE_URL` uses the Vite proxy during local npm development and the Nginx `/api` proxy in Docker; it can be replaced with a deployed API origin later.
 
 ## Known limitations
 

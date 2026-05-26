@@ -12,7 +12,17 @@ cp frontend/.env.example frontend/.env
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_BASE_URL` | Backend origin. Leave empty during local Vite development to use the built-in `/api` proxy to `http://localhost:3001`, or set a full backend origin when the deployed API is CORS-enabled. The frontend appends `/api/v1/tickets`. |
+| `VITE_API_BASE_URL` | Backend origin. Leave empty during local Vite development to use the built-in `/api` proxy to `http://localhost:3001`, and leave empty in Docker so Nginx proxies same-origin `/api` requests to the backend service. Set a full backend origin only when the deployed API is CORS-enabled. The frontend appends `/api/v1/tickets`. |
+
+## Docker
+
+From the repository root, build and start the complete stack:
+
+```bash
+docker compose up -d --build
+```
+
+Open `http://localhost:5173`. The frontend container serves the production build with Nginx and proxies `/api` requests to the backend container.
 
 ## Local Development
 

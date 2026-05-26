@@ -63,7 +63,7 @@ npm run build
 Build and run MongoDB plus the backend service:
 
 ```bash
-docker compose --profile app up -d --build backend
+docker compose up -d --build backend
 ```
 
 The backend container receives `MONGODB_URI=mongodb://mongodb:27017/thinkin_tickets` from `docker-compose.yml`.
