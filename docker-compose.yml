@@ -19,17 +19,37 @@ services:
     build:
       context: ./backend
     container_name: thinkin-ticket-api-backend
+    restart: unless-stopped
     depends_on:
       mongodb:
         condition: service_healthy
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3001
       MONGODB_URI: mongodb://mongodb:27017/thinkin_tickets
     ports:
       - "3001:3001"
-    profiles:
-      - app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: thinkin-ticket-api-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   mongodb_data:
