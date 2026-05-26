@@ -1,5 +1,5 @@
-import type { TicketDocument } from "./ticket.model.js";
-import type { TicketResponse } from "./ticket.types.js";
+import type { TicketDocument } from "./infra/ticket.model.js";
+import type { TicketResponse } from "./domain/ticket.types.js";
 
 const toIso = (value: Date): string => value.toISOString();
 

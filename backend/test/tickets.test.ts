@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { TicketModel } from "../src/tickets/ticket.model.js";
+import { TicketModel } from "../src/tickets/infra/ticket.model.js";
 import { app, createTicket, expectStandardError, expectTicketShape, validTicketPayload } from "./helpers.js";
 
 const missingObjectId = () => new mongoose.Types.ObjectId().toString();

@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { connectDatabase, disconnectDatabase } from "./db.js";
-import { TicketModel, type Ticket } from "./tickets/ticket.model.js";
-import { ticketChannels, ticketPriorities, ticketStatuses } from "./tickets/ticket.types.js";
+import { TicketModel, type Ticket } from "./tickets/infra/ticket.model.js";
+import { ticketChannels, ticketPriorities, ticketStatuses } from "./tickets/domain/ticket.types.js";
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ticketChannels, ticketPriorities, ticketStatuses } from "./ticket.types.js";
+import { ticketChannels, ticketPriorities, ticketStatuses } from "./domain/ticket.types.js";
 
 const nonEmpty = z.string().trim().min(1);
 

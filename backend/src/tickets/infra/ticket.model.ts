@@ -1,5 +1,12 @@
 import { model, Schema, type HydratedDocument } from "mongoose";
-import { ticketChannels, ticketPriorities, ticketStatuses, type TicketChannel, type TicketPriority, type TicketStatus } from "./ticket.types.js";
+import {
+  ticketChannels,
+  ticketPriorities,
+  ticketStatuses,
+  type TicketChannel,
+  type TicketPriority,
+  type TicketStatus
+} from "../domain/ticket.types.js";
 
 export type Ticket = {
   hotel_id: string;
