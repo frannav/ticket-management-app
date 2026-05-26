@@ -3,10 +3,9 @@
     <v-card class="blueprint-console">
       <v-card-title class="ticket-header">
         <div>
-          <p class="section-kicker">Live schematic board</p>
+          <p class="section-kicker">board</p>
           <h2>Ticket management</h2>
           <p class="section-copy">
-            Calibrate incoming guest requests by status, priority, channel, hotel, assignee, and search signal.
           </p>
         </div>
         <div class="ticket-header__actions">
