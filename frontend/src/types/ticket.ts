@@ -30,6 +30,11 @@ export type TicketListPagination = {
 export type TicketListResponse = {
   data: Ticket[];
   pagination: TicketListPagination;
+  summary: {
+    open_circuits: number;
+    urgent_load: number;
+    assigned_tickets: number;
+  };
 };
 
 export type TicketListQuery = {

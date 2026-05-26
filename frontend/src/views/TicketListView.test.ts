@@ -19,9 +19,18 @@ const ticket = (overrides: Partial<Ticket> = {}): Ticket => ({
   ...overrides
 });
 
-const listResponse = (tickets: Ticket[], pagination = { page: 1, page_size: 20, total: tickets.length, total_pages: Math.max(tickets.length, 1) }): TicketListResponse => ({
+const listResponse = (
+  tickets: Ticket[],
+  pagination = { page: 1, page_size: 20, total: tickets.length, total_pages: Math.max(tickets.length, 1) },
+  summary = {
+    open_circuits: tickets.filter((item) => item.status === "open" || item.status === "in_progress").length,
+    urgent_load: tickets.filter((item) => item.priority === "urgent").length,
+    assigned_tickets: tickets.filter((item) => item.assigned_to).length
+  }
+): TicketListResponse => ({
   data: tickets,
-  pagination
+  pagination,
+  summary
 });
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
@@ -344,6 +353,29 @@ describe("TicketListView", () => {
     const requestedUrl = new URL(String(fetchSpy.mock.calls[0][0]));
     expect(requestedUrl.searchParams.get("page")).toBe("1");
     expect(wrapper.text()).toContain("Page 1 of 3 · 42 total tickets");
+  });
+
+  it("renders board metrics from API summary instead of deriving them from the current page", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse(
+          listResponse(
+            [ticket({ status: "closed", priority: "low", assigned_to: null })],
+            { page: 2, page_size: 20, total: 20, total_pages: 2 },
+            { open_circuits: 12, urgent_load: 4, assigned_tickets: 9 }
+          )
+        )
+      )
+    );
+
+    const wrapper = mountWithVuetify(TicketListView);
+    await waitForLoaded();
+
+    expect(wrapper.text()).toContain("Total signals20");
+    expect(wrapper.text()).toContain("Open circuits12");
+    expect(wrapper.text()).toContain("Urgent load4");
+    expect(wrapper.text()).toContain("Assigned tickets9");
   });
 
   it("renders compact pagination with first, last, nearby pages, and ellipses", async () => {

@@ -23,15 +23,15 @@
           </article>
           <article class="metric-card">
             <span>Open circuits</span>
-            <strong>{{ openTicketCount }}</strong>
+            <strong>{{ summary.open_circuits }}</strong>
           </article>
           <article class="metric-card">
             <span>Urgent load</span>
-            <strong>{{ urgentTicketCount }}</strong>
+            <strong>{{ summary.urgent_load }}</strong>
           </article>
           <article class="metric-card">
             <span>Assigned tickets</span>
-            <strong>{{ assignedTicketCount }}</strong>
+            <strong>{{ summary.assigned_tickets }}</strong>
           </article>
         </section>
 
@@ -170,6 +170,7 @@ import {
   type Ticket,
   type TicketChannel,
   type TicketListPagination,
+  type TicketListResponse,
   type TicketListQuery,
   type TicketPriority,
   type TicketStatus
@@ -186,6 +187,11 @@ const pagination = reactive<TicketListPagination>({
   page_size: PAGE_SIZE,
   total: 0,
   total_pages: 0
+});
+const summary = reactive<TicketListResponse["summary"]>({
+  open_circuits: 0,
+  urgent_load: 0,
+  assigned_tickets: 0
 });
 type QueryState = Required<Pick<TicketListQuery, "page" | "page_size">> & {
   hotel_id: string;
@@ -238,10 +244,6 @@ const visiblePages = computed<VisiblePage[]>(() => {
   });
 });
 
-const openTicketCount = computed(() => tickets.value.filter((ticket) => ticket.status === "open" || ticket.status === "in_progress").length);
-const urgentTicketCount = computed(() => tickets.value.filter((ticket) => ticket.priority === "urgent").length);
-const assignedTicketCount = computed(() => tickets.value.filter((ticket) => ticket.assigned_to).length);
-
 const formatDate = (value: string): string => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 const loadTickets = async () => {
@@ -252,10 +254,16 @@ const loadTickets = async () => {
     const response = await listTickets(query);
     tickets.value = response.data;
     Object.assign(pagination, response.pagination);
+    Object.assign(summary, response.summary);
     query.page = response.pagination.page;
     query.page_size = response.pagination.page_size;
   } catch (error) {
     tickets.value = [];
+    Object.assign(summary, {
+      open_circuits: 0,
+      urgent_load: 0,
+      assigned_tickets: 0
+    });
     listError.value = error instanceof Error ? error.message : "Ticket request failed. Please try again.";
   } finally {
     isLoading.value = false;
